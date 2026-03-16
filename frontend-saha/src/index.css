@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #ea580c; /* Cam san hô sang trọng */
+  --color-brand-light: #fff7ed; /* Nền cam siêu nhạt */
+  --color-brand-hover: #c2410c; /* Cam đậm khi di chuột */
+  --color-surface: #f8fafc; /* Nền xám xanh cực nhẹ cho mắt */
+}
+
+/* Thêm hiệu ứng cuộn mượt cho toàn trang */
+html {
+  scroll-behavior: smooth;
+}
