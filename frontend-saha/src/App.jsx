@@ -6,33 +6,54 @@ import {
   Facebook, Instagram, Youtube, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-// === DỮ LIỆU GIẢ (MOCK DATA) ===
-const mockCategories = [
-  { id: 1, name: 'Vitamin & Khoáng chất', icon: '💊' },
-  { id: 2, name: 'Hỗ trợ tiêu hóa', icon: '🌿' },
-  { id: 3, name: 'Xương khớp', icon: '🦴' },
-  { id: 4, name: 'Đề kháng', icon: '🛡️' },
-  { id: 5, name: 'Làm đẹp', icon: '✨' },
-];
+// // === DỮ LIỆU GIẢ (MOCK DATA) ===
+// const mockCategories = [
+//   { id: 1, name: 'Vitamin & Khoáng chất', icon: '💊' },
+//   { id: 2, name: 'Hỗ trợ tiêu hóa', icon: '🌿' },
+//   { id: 3, name: 'Xương khớp', icon: '🦴' },
+//   { id: 4, name: 'Đề kháng', icon: '🛡️' },
+//   { id: 5, name: 'Làm đẹp', icon: '✨' },
+// ];
 
-const mockProducts = [
+// const mockProducts = [
   
-  { id: '1', name: 'Vitamin C 1000mg Nature Made - Tăng đề kháng', price: 350000, oldPrice: 400000, category: 'Vitamin', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Vitamin+C&font=Montserrat' },
-  { id: '2', name: 'Omega 3 Fish Oil Cao Cấp Nhập Khẩu Mỹ', price: 420000, oldPrice: 500000, category: 'Tim mạch', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Omega+3&font=Montserrat' },
-  { id: '3', name: 'Viên Uống Bổ Não Ginkgo Biloba 120mg', price: 280000, oldPrice: null, category: 'Thần kinh', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Ginkgo&font=Montserrat' },
-  { id: '4', name: 'Canxi & D3 Hỗ Trợ Xương Khớp Chắc Khỏe', price: 310000, oldPrice: 350000, category: 'Xương khớp', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Canxi+D3&font=Montserrat' },
-  { id: '5', name: 'Kẽm (Zinc) 50mg Giảm Mụn, Đẹp Da', price: 180000, oldPrice: 200000, category: 'Làm đẹp', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Zinc+50mg&font=Montserrat' },
-];
+//   { id: '1', name: 'Vitamin C 1000mg Nature Made - Tăng đề kháng', price: 350000, oldPrice: 400000, category: 'Vitamin', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Vitamin+C&font=Montserrat' },
+//   { id: '2', name: 'Omega 3 Fish Oil Cao Cấp Nhập Khẩu Mỹ', price: 420000, oldPrice: 500000, category: 'Tim mạch', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Omega+3&font=Montserrat' },
+//   { id: '3', name: 'Viên Uống Bổ Não Ginkgo Biloba 120mg', price: 280000, oldPrice: null, category: 'Thần kinh', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Ginkgo&font=Montserrat' },
+//   { id: '4', name: 'Canxi & D3 Hỗ Trợ Xương Khớp Chắc Khỏe', price: 310000, oldPrice: 350000, category: 'Xương khớp', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Canxi+D3&font=Montserrat' },
+//   { id: '5', name: 'Kẽm (Zinc) 50mg Giảm Mụn, Đẹp Da', price: 180000, oldPrice: 200000, category: 'Làm đẹp', img: 'https://placehold.co/400x400/fff7ed/ea580c?text=Zinc+50mg&font=Montserrat' },
+// ];
 
-const mockBlogs = [
-  { id: 1, title: '5 Loại Vitamin Cần Thiết Cho Mùa Bệnh Dịch', date: '12/10/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+1' },
-  { id: 2, title: 'Cách Phân Biệt Omega 3 Thật Giả Chuẩn Nhất', date: '05/10/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+2' },
-  { id: 3, title: 'Bí Quyết Tăng Sức Đề Kháng Tự Nhiên Cho Bé', date: '28/09/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+3' },
-];
+// const mockBlogs = [
+//   { id: 1, title: '5 Loại Vitamin Cần Thiết Cho Mùa Bệnh Dịch', date: '12/10/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+1' },
+//   { id: 2, title: 'Cách Phân Biệt Omega 3 Thật Giả Chuẩn Nhất', date: '05/10/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+2' },
+//   { id: 3, title: 'Bí Quyết Tăng Sức Đề Kháng Tự Nhiên Cho Bé', date: '28/09/2026', img: 'https://placehold.co/600x400/e2e8f0/64748b?text=Health+Tips+3' },
+// ];
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  // === 4. TẠO STATE ĐỂ CHỨA DỮ LIỆU THẬT ===
+  const [products, setProducts] = useState([]);
+
+  // === 5. GỌI DỮ LIỆU TỪ SUPABASE KHI TRANG VỪA MỞ ===
+  useEffect(() => {
+    const fetchProducts = async () => {
+      // Lệnh SQL tương đương: SELECT * FROM products LIMIT 5;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .limit(5); 
+
+      if (error) {
+        console.error("Lỗi khi kéo dữ liệu:", error);
+      } else {
+        setProducts(data); // Đổ dữ liệu thật vào State
+      }
+    };
+
+    fetchProducts();
+  }, []); // Dấu [] giúp lệnh này chỉ chạy đúng 1 lần khi load trang
   return (
     <div className="min-h-screen bg-surface font-sans text-slate-800 selection:bg-brand selection:text-white relative">
       
