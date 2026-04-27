@@ -1,0 +1,19 @@
+# Backend dependencies cho SaHa AI
+# Python 3.11+
+# Cap nhat: 2026-04-26
+
+# Web Framework
+fastapi==0.110.0
+uvicorn==0.29.0
+
+# Bien moi truong
+python-dotenv==1.0.1
+
+# Google Gemini AI SDK (thu vien moi - thay the google-generativeai cu)
+google-genai==1.73.1
+
+# Supabase (Database & Vector Store)
+supabase==2.29.0
+
+# HTTP Client (phien ban tuong thich voi google-genai va supabase moi)
+httpx==0.28.1

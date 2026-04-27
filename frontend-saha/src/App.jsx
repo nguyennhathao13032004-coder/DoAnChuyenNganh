@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import ChatAI from './ChatAI.jsx';
 import { supabase } from './services/supabase';
-import { 
-  Search, ShoppingCart, User, Phone, ShieldCheck, 
-  ChevronRight, HeartPulse, Sparkles, MapPin, Mail, 
+import {
+  Search, ShoppingCart, User, Phone, ShieldCheck,
+  ChevronRight, HeartPulse, Sparkles, MapPin, Mail,
   Facebook, Instagram, Youtube, Clock,
-  Pill, Leaf, Eye // Import thêm các Icon xịn sò
+  Pill, Leaf, Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,7 +17,7 @@ const mockBlogs = [
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [menuProducts, setMenuProducts] = useState([]);
@@ -44,11 +43,11 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-surface font-sans text-slate-800 selection:bg-brand selection:text-white relative">
-      
+
       <div className="bg-brand text-white text-xs py-2 font-medium tracking-wide">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-          <span className="flex items-center gap-1.5"><ShieldCheck size={14}/> SaHa cam kết 100% hàng chính hãng</span>
-          <span className="flex items-center gap-1.5"><Phone size={14}/> Hotline: 0858.433.409</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck size={14} /> SaHa cam kết 100% hàng chính hãng</span>
+          <span className="flex items-center gap-1.5"><Phone size={14} /> Hotline: 0858.433.409</span>
         </div>
       </div>
 
@@ -60,7 +59,7 @@ const App = () => {
             </div>
             <span className="text-3xl font-black text-slate-900 tracking-tight">Sa<span className="text-brand">Ha</span></span>
           </div>
-          
+
           <div className="flex-1 max-w-2xl relative group">
             <input type="text" placeholder="Tìm sản phẩm..." className="w-full pl-5 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:bg-white focus:ring-2 focus:ring-brand outline-none transition-all text-sm" />
             <button className="absolute right-1.5 top-1.5 bg-brand text-white p-1.5 rounded-full hover:bg-brand-hover transition-colors">
@@ -85,8 +84,8 @@ const App = () => {
 
         <div className="border-t border-slate-50 bg-white">
           <div className="max-w-7xl mx-auto px-4 flex items-center relative">
-            
-            <div 
+
+            <div
               onMouseEnter={() => setIsMenuOpen(true)}
               onMouseLeave={() => setIsMenuOpen(false)}
               className="relative"
@@ -165,7 +164,7 @@ const App = () => {
               <Sparkles size={14} /> Trợ lý AI tư vấn 24/7
             </div>
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-5 leading-tight">
-              Sức khỏe vững vàng, <br/><span className="text-brand">An tâm mỗi ngày.</span>
+              Sức khỏe vững vàng, <br /><span className="text-brand">An tâm mỗi ngày.</span>
             </h2>
             <p className="text-slate-600 mb-8 leading-relaxed">
               Nhà thuốc SaHa cung cấp hàng ngàn sản phẩm TPCN chính hãng. Trải nghiệm tính năng hỏi đáp cùng Dược Sĩ AI thông minh nhất.
@@ -178,7 +177,6 @@ const App = () => {
         </div>
       </div>
 
-      {/* DANH MỤC TRUNG TÂM (Đã thay đổi Icon và Gắn Link chuyển trang) */}
       <div className="max-w-7xl mx-auto px-4 mt-12">
         <h3 className="text-2xl font-black text-slate-900 mb-6">Danh Mục Chăm Sóc</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -186,8 +184,7 @@ const App = () => {
             .filter(cat => ['Vitamin & Khoáng chất', 'Hỗ trợ làm đẹp', 'Tiêu hóa', 'Miễn dịch & Đề kháng', 'Mắt & Thị lực'].includes(cat.name))
             .slice(0, 5)
             .map((cat) => {
-              // Gán Icon Lucide tương ứng
-              let IconComponent = Sparkles; 
+              let IconComponent = Sparkles;
               if (cat.name === 'Vitamin & Khoáng chất') IconComponent = Pill;
               if (cat.name === 'Tiêu hóa') IconComponent = Leaf;
               if (cat.name === 'Miễn dịch & Đề kháng') IconComponent = ShieldCheck;
@@ -195,10 +192,9 @@ const App = () => {
               if (cat.name === 'Hỗ trợ làm đẹp') IconComponent = Sparkles;
 
               return (
-                <div 
-                  key={cat.id} 
-                  // Gắn State categoryId để gửi sang trang Danh sách sản phẩm
-                  onClick={() => navigate('/products', { state: { categoryId: cat.id } })} 
+                <div
+                  key={cat.id}
+                  onClick={() => navigate('/products', { state: { categoryId: cat.id } })}
                   className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center cursor-pointer hover:border-brand/50 hover:shadow-md transition-all group"
                 >
                   <div className="mb-3 bg-slate-50 w-16 h-16 mx-auto rounded-full flex items-center justify-center group-hover:bg-brand-light transition-colors">
@@ -207,7 +203,7 @@ const App = () => {
                   <p className="font-bold text-slate-700 text-sm group-hover:text-brand transition-colors">{cat.name}</p>
                 </div>
               );
-          })}
+            })}
         </div>
       </div>
 
@@ -261,7 +257,6 @@ const App = () => {
         </div>
       </div>
 
-      <ChatAI />
     </div>
   );
 };

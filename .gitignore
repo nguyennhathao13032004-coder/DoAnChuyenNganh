@@ -1,0 +1,9 @@
+# Bỏ qua thư viện Frontend
+node_modules/
+
+# Bỏ qua thư viện Backend Python
+venv/
+__pycache__/
+
+# Bỏ qua file chứa API Key (CỰC KỲ QUAN TRỌNG ĐỂ BẢO MẬT)
+.env

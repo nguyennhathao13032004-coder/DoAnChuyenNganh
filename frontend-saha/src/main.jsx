@@ -9,6 +9,10 @@ import ProductDetail from './ProductDetail.jsx'
 import Cart from './Cart.jsx'
 import AdminDashboard from './AdminDashboard.jsx'
 import ProductPage from './ProductPage.jsx'
+
+// IMPORT CHAT AI VÀO ĐÂY
+import ChatAI from './ChatAI.jsx'
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -21,6 +25,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/products" element={<ProductPage />} />
       </Routes>
+
+      {/* ĐẶT CHAT AI Ở ĐÂY ĐỂ NÓ ĐI THEO MỌI TRANG */}
+      <ChatAI />
+
     </BrowserRouter>
   </React.StrictMode>,
 )

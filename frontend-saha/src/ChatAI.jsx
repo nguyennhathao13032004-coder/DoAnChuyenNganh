@@ -1,96 +1,284 @@
-import React, { useState } from 'react';
-import { Sparkles, Send, X, Bot, User, Minus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, Send, X, Bot, ShoppingBag, ChevronRight, Minus, Maximize2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const MessageBubble = ({ msg, onViewProduct }) => {
+  const isBot = msg.isBot;
+
+  return (
+    <div className={`flex flex-col gap-2 ${isBot ? 'items-start' : 'items-end'}`}>
+      <div
+        className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm shadow-sm whitespace-pre-line leading-relaxed
+          ${isBot
+            ? 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+            : 'bg-brand text-white rounded-tr-none'
+          }`}
+      >
+        {msg.text}
+      </div>
+
+      {isBot && msg.products && msg.products.length > 0 && (
+        <div className="w-full max-w-[90%] mt-2 space-y-3">
+          {msg.products.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => onViewProduct(p.id)}
+              className="group flex flex-col bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm hover:shadow-md hover:border-brand/50 transition-all cursor-pointer overflow-hidden"
+            >
+              <div className="flex gap-3 items-center">
+                <div className="bg-brand/10 p-2.5 rounded-xl text-brand group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300 shrink-0">
+                  <ShoppingBag size={20} strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-slate-700 text-sm line-clamp-2 leading-snug">
+                    {p.name}
+                  </h4>
+                  <p className="text-brand font-black text-sm mt-1">
+                    {p.price.toLocaleString('vi-VN')} ₫
+                  </p>
+                </div>
+              </div>
+              <div className="w-full mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-slate-400 group-hover:text-brand transition-colors">
+                <span className="text-xs font-medium">Xem chi tiết sản phẩm</span>
+                <ChevronRight size={16} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ChatAI = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Chào Hào! Mình là Dược sĩ AI của SaHa. Bạn cần mình tư vấn về loại thuốc hay cách chăm sóc sức khỏe nào không?", isBot: true }
-  ]);
-  const [input, setInput] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation(); // Hook để lấy đường dẫn URL hiện tại
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    
-    // Thêm tin nhắn của người dùng
-    const userMsg = { id: Date.now(), text: input, isBot: false };
-    setMessages([...messages, userMsg]);
-    setInput("");
+  // 1. STATE LƯU TRẠNG THÁI ĐÓNG/MỞ
+  const [isOpen, setIsOpen] = useState(() => {
+    const savedState = sessionStorage.getItem('saha_chat_is_open');
+    return savedState === 'true';
+  });
 
-    // Giả lập AI đang trả lời (Tuần 9 sẽ thay bằng Gemini thật)
-    setTimeout(() => {
-      const botMsg = { id: Date.now() + 1, text: "Cảm ơn bạn, mình đang nghiên cứu câu hỏi này...", isBot: true };
-      setMessages(prev => [...prev, botMsg]);
-    }, 1000);
+  // 2. STATE LƯU TRẠNG THÁI THU NHỎ (MINIMIZE)
+  const [isMinimized, setIsMinimized] = useState(() => {
+    const savedMin = sessionStorage.getItem('saha_chat_is_minimized');
+    return savedMin === 'true';
+  });
+
+  // 3. LẤY LỊCH SỬ TIN NHẮN TỪ SESSION
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = sessionStorage.getItem('saha_chat_history');
+    if (savedMessages) {
+      return JSON.parse(savedMessages);
+    }
+    return [
+      {
+        id: 1,
+        text: 'Chào bạn! Mình là Dược sĩ AI của SaHa.\nBạn cần tư vấn sức khỏe hoặc tìm sản phẩm gì không?',
+        isBot: true,
+        products: null,
+      },
+    ];
+  });
+
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+
+  // Lưu lịch sử chat
+  useEffect(() => {
+    sessionStorage.setItem('saha_chat_history', JSON.stringify(messages));
+  }, [messages]);
+
+  // Lưu trạng thái đóng/mở và thu nhỏ
+  useEffect(() => {
+    sessionStorage.setItem('saha_chat_is_open', isOpen.toString());
+    sessionStorage.setItem('saha_chat_is_minimized', isMinimized.toString());
+  }, [isOpen, isMinimized]);
+
+  // Cuộn xuống cuối khi có tin nhắn mới (chỉ chạy khi không bị thu nhỏ)
+  useEffect(() => {
+    if (containerRef.current && !isMinimized) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages, isOpen, isMinimized]);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMsg = { id: Date.now(), text, isBot: false, products: null };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Loi mang: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const botMsg = {
+        id: Date.now() + 1,
+        text: data.answer,
+        isBot: true,
+        products: data.products || null,
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      const errorMsg = {
+        id: Date.now() + 1,
+        text: `Lỗi kết nối Backend: ${err.message}`,
+        isBot: true,
+        products: null,
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleViewProduct = (productId) => {
+    navigate(`/product/${productId}`);
+    // Thu nhỏ chat lại thay vì đóng hẳn khi khách xem sản phẩm
+    setIsMinimized(true);
+  };
+
+  // ==========================================
+  // LOGIC ẨN CHAT BOX Ở CÁC TRANG AUTH
+  // ==========================================
+  const hiddenRoutes = ['/login', '/register', '/forgot-password'];
+  if (hiddenRoutes.includes(location.pathname)) {
+    return null; // Không render gì cả nếu đang ở trang Đăng nhập/Đăng ký
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] font-sans">
-      {/* 1. NÚT BẤM NỔI (Floating Button) */}
+      {/* Nút mở chat (khi bị đóng hẳn) */}
       {!isOpen && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          className="bg-brand text-white p-4 rounded-full shadow-2xl shadow-brand/40 hover:scale-110 transition-all flex items-center gap-3 group animate-bounce-slow"
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setIsMinimized(false); // Mở lên thì bung to ra luôn
+          }}
+          className="bg-brand text-white px-5 py-3.5 rounded-full shadow-2xl flex items-center gap-3 transition-all hover:bg-brand-hover animate-bounce-slow"
         >
-          <Sparkles size={28} className="animate-pulse" />
-          <span className="font-bold pr-2">Hỏi Dược Sĩ AI</span>
+          <Sparkles size={22} />
+          <span className="font-bold text-sm">Hỏi Dược Sĩ AI</span>
         </button>
       )}
 
-      {/* 2. KHUNG CHAT (Chat Window) */}
+      {/* Cửa sổ chat */}
       {isOpen && (
-        <div className="bg-white w-[380px] h-[550px] rounded-[2rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
-          
-          {/* Header Khung Chat */}
-          <div className="bg-brand p-5 text-white flex justify-between items-center">
+        <div
+          className={`bg-white w-[380px] rounded-[1.75rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isMinimized ? 'h-auto' : 'h-[580px]'
+            }`}
+        >
+          {/* Header */}
+          <div
+            className="bg-brand px-5 py-4 text-white flex justify-between items-center shrink-0 cursor-pointer"
+            onClick={() => isMinimized && setIsMinimized(false)} // Bấm vào header lúc thu nhỏ sẽ bung ra
+          >
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-xl">
-                <Bot size={24} />
+                <Bot size={22} />
               </div>
               <div>
                 <h4 className="font-bold text-sm">Dược Sĩ AI SaHa</h4>
-                <div className="flex items-center gap-1.5 text-[10px] opacity-80 uppercase tracking-widest font-bold">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span> Đang trực tuyến
-                </div>
+                {!isMinimized && (
+                  <div className="text-[10px] opacity-80 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-green-300 rounded-full inline-block" />
+                    Đang trực tuyến
+                  </div>
+                )}
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1.5 rounded-lg transition-colors">
-              <X size={20} />
-            </button>
+
+            {/* Cụm nút điều khiển */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Tránh kích hoạt sự kiện click của thẻ cha
+                  setIsMinimized(!isMinimized);
+                }}
+                className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"
+                title={isMinimized ? "Mở rộng" : "Thu nhỏ"}
+              >
+                {isMinimized ? <Maximize2 size={16} /> : <Minus size={18} />}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"
+                title="Đóng chat"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
-          {/* Nội dung tin nhắn (Scrollable) */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
-                <div className={`max-w-[80%] p-4 rounded-2xl text-sm shadow-sm ${
-                  msg.isBot 
-                    ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100' 
-                    : 'bg-brand text-white rounded-tr-none'
-                }`}>
-                  {msg.text}
-                </div>
+          {/* Khu vực hiển thị tin nhắn (Chỉ hiện khi KHÔNG bị thu nhỏ) */}
+          {!isMinimized && (
+            <>
+              <div
+                ref={containerRef}
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/60"
+              >
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} msg={msg} onViewProduct={handleViewProduct} />
+                ))}
+
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-none text-xs border border-slate-100 text-slate-400 shadow-sm flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
 
-          {/* Ô nhập liệu */}
-          <div className="p-4 bg-white border-t border-slate-100 flex gap-2 items-center">
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Hỏi AI về sức khỏe..."
-              className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand outline-none transition-all"
-            />
-            <button 
-              onClick={handleSend}
-              className="bg-brand text-white p-3 rounded-xl hover:bg-brand-hover transition-all disabled:opacity-50"
-              disabled={!input.trim()}
-            >
-              <Send size={18} />
-            </button>
-          </div>
+              {/* Ô nhập liệu */}
+              <div className="px-4 py-3 bg-white border-t border-slate-100 flex gap-2 items-center shrink-0">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder="Hỏi về sức khỏe, sản phẩm..."
+                  className="flex-1 bg-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/30 transition-all"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || loading}
+                  className="bg-brand text-white p-2.5 rounded-xl disabled:opacity-40 hover:bg-brand-hover transition-colors"
+                >
+                  <Send size={17} />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
