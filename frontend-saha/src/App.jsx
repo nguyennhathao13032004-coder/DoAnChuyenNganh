@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import ChatAI from './ChatAI.jsx';
 import { supabase } from './services/supabase';
+// GỘP CHUNG VÀO 1 KHỐI NÀY THÔI SẾP NHÉ (Đã thêm Camera vào cuối):
 import { 
   Search, ShoppingCart, User, Phone, ShieldCheck, 
   ChevronRight, HeartPulse, Sparkles, MapPin, Mail, 
   Facebook, Instagram, Youtube, Clock,
-  Pill, Leaf, Eye // Import thêm các Icon xịn sò
+  Pill, Leaf, Eye, LogOut, Camera,
+  ScanLine, ArrowRight 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useCart } from './CartContext';
-/// === DỮ LIỆU DANH MỤC ===
+import FloatingPrescription from './FloatingPrescription';
+import AiHealthQuiz from './AiHealthQuiz';
+import SnapMatchModal from './SnapMatchModal'; 
+import PrescriptionScanner from './PrescriptionScanner';
+
 const mockCategories = [
   { id: 1, name: 'Vitamin & Khoáng chất', icon: '💊' },
   { id: 2, name: 'Miễn dịch & Đề kháng', icon: '🛡️' },
@@ -30,12 +36,18 @@ const mockCategories = [
 const App = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
-  
+  const [isAiQuizOpen, setIsAiQuizOpen] = useState(false);
+  // --- BỔ SUNG CÁC BIẾN CÒN THIẾU GIỮ NGUYÊN LOGIC ---
+  const { cartCount, isAnimating } = useCart(); 
+  const [user, setUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [realProducts, setRealProducts] = useState([]);
+  const [blogs, setBlogs] = useState([]);
+  const [isSnapModalOpen, setIsSnapModalOpen] = useState(false);
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(mockCategories); // Gán dữ liệu mẫu để hiện danh mục
   const [menuProducts, setMenuProducts] = useState([]);
-
+  
   useEffect(() => {
     // 1. Kiểm tra đăng nhập
     const savedUser = localStorage.getItem('user');
@@ -91,6 +103,7 @@ const App = () => {
       {/* 2. HEADER */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-8">
+          
           <div onClick={() => navigate('/')} className="flex items-center gap-2 cursor-pointer group shrink-0">
             <div className="bg-brand-light p-2 rounded-xl">
               <HeartPulse size={32} className="text-brand" />
@@ -98,23 +111,35 @@ const App = () => {
             <span className="text-3xl font-black text-slate-900 tracking-tight">Sa<span className="text-brand">Ha</span></span>
           </div>
 
+          {/* Ô TÌM KIẾM TÍCH HỢP AI CAMERA */}
           <div className="flex-1 max-w-2xl relative group">
-          <input 
-            type="text" 
-            placeholder="Tìm sản phẩm ... " 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            // Nhấn Enter cũng tìm luôn
-            onKeyDown={(e) => e.key === 'Enter' && navigate(`/products?search=${searchQuery}`)}
-            className="w-full pl-5 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:bg-white focus:ring-2 focus:ring-brand outline-none transition-all text-sm" 
-        />
-          <button 
-            onClick={() => navigate(`/products?search=${searchQuery}`)}
-            className="absolute right-1.5 top-1.5 bg-brand text-white p-1.5 rounded-full hover:bg-brand-hover transition-colors"
-          >
-        <Search size={18} />
-        </button>
-      </div>
+            <input 
+              type="text" 
+              placeholder="Tìm sản phẩm ... " 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(`/products?search=${searchQuery}`)}
+              // Đã đổi pr-14 thành pr-24 để không đè chữ vào 2 nút bên phải
+              className="w-full pl-5 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-full focus:bg-white focus:ring-2 focus:ring-brand outline-none transition-all text-sm" 
+            />
+
+            {/* NÚT 1: MẮT THẦN CAMERA AI */}
+            <button 
+              onClick={() => setIsSnapModalOpen(true)}
+              className="absolute right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand p-1.5 hover:bg-slate-100 rounded-full transition-colors"
+              title="Tìm thuốc bằng hình ảnh vỏ hộp"
+            >
+              <Camera size={20} />
+            </button>
+
+            {/* NÚT 2: TÌM KIẾM CHỮ */}
+            <button 
+              onClick={() => navigate(`/products?search=${searchQuery}`)}
+              className="absolute right-1.5 top-1.5 bg-brand text-white p-1.5 rounded-full hover:bg-brand-hover transition-colors"
+            >
+              <Search size={18} />
+            </button>
+          </div>
 
           <div className="flex gap-6 items-center shrink-0">
             
@@ -185,64 +210,97 @@ const App = () => {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute top-full left-0 w-[1000px] bg-white shadow-2xl rounded-b-3xl border border-slate-100 p-8 flex gap-10 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                <div className="absolute top-full left-0 w-[1050px] bg-white shadow-2xl rounded-b-3xl border border-slate-100 p-8 flex gap-8 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                  
+                  {/* CỘT 1: THỰC PHẨM CHỨC NĂNG CƠ BẢN */}
                   <div className="flex-1">
-                    <h4 className="font-bold text-brand mb-4 pb-2 border-b border-orange-50 uppercase text-xs tracking-widest">Thực phẩm bổ sung</h4>
-                    <ul className="space-y-3 text-sm text-slate-600">
-                      {/* Gắn ID = 1 */}
-                      <li onClick={() => navigate('/products?category=1')} className="hover:text-brand cursor-pointer transition-colors">Vitamins & Khoáng chất</li>
-                      {/* Gắn ID = 12 */}
-                      <li onClick={() => navigate('/products?category=12')} className="hover:text-brand cursor-pointer transition-colors">Bổ Gan / Thải độc</li>
-                      {/* Gắn ID = 4 */}
-                      <li onClick={() => navigate('/products?category=4')} className="hover:text-brand cursor-pointer transition-colors">Bổ Mắt</li>
-                      {/* Gắn ID = 6 */}
-                      <li onClick={() => navigate('/products?category=6')} className="hover:text-brand cursor-pointer transition-colors">Bổ Não / Giảm Stress</li>
-                      {/* Gắn ID = 5 (Tạm dùng Tiêu hóa cho Giảm cân) */}
-                      <li onClick={() => navigate('/products?category=5')} className="hover:text-brand cursor-pointer transition-colors">Hỗ trợ giảm cân</li>
-                      {/* Gắn ID = 11 */}
-                      <li onClick={() => navigate('/products?category=11')} className="hover:text-brand cursor-pointer transition-colors">Xương khớp & Sụn</li>
+                    <h4 className="font-bold text-brand mb-4 pb-2 border-b border-orange-50 uppercase text-xs tracking-widest">Thực Phẩm Chức Năng</h4>
+                    <ul className="space-y-3 text-sm text-slate-600 font-medium">
+                      <li onClick={() => navigate('/products?category=1')} className="hover:text-brand cursor-pointer transition-colors">1. Vitamin & Khoáng chất</li>
+                      <li onClick={() => navigate('/products?category=2')} className="hover:text-brand cursor-pointer transition-colors">2. Miễn dịch & Đề kháng</li>
+                      <li onClick={() => navigate('/products?category=3')} className="hover:text-brand cursor-pointer transition-colors">3. Sinh lý & Nội tiết tố</li>
+                      <li onClick={() => navigate('/products?category=4')} className="hover:text-brand cursor-pointer transition-colors">4. Mắt & Thị lực</li>
+                      <li onClick={() => navigate('/products?category=5')} className="hover:text-brand cursor-pointer transition-colors">5. Tiêu hóa</li>
+                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">7. Hỗ trợ làm đẹp</li>
+                      <li onClick={() => navigate('/products?category=11')} className="hover:text-brand cursor-pointer transition-colors">11. Cơ xương khớp</li>
                     </ul>
                   </div>
 
+                  {/* CỘT 2: HỖ TRỢ BỆNH LÝ */}
                   <div className="flex-1">
-                    <h4 className="font-bold text-brand mb-4 pb-2 border-b border-orange-50 uppercase text-xs tracking-widest">Chăm sóc sắc đẹp</h4>
-                    <ul className="space-y-3 text-sm text-slate-600">
-                      {/* Tất cả Sắc đẹp gắn ID = 7 */}
-                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">Collagen</li>
-                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">Kem chống nắng</li>
-                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">Kem dưỡng da</li>
-                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">Nước Hoa Hồng</li>
-                      <li onClick={() => navigate('/products?category=7')} className="hover:text-brand cursor-pointer transition-colors">Sữa rửa mặt</li>
+                    <h4 className="font-bold text-brand mb-4 pb-2 border-b border-orange-50 uppercase text-xs tracking-widest">Hỗ Trợ Bệnh Lý</h4>
+                    <ul className="space-y-3 text-sm text-slate-600 font-medium">
+                      <li onClick={() => navigate('/products?category=6')} className="hover:text-brand cursor-pointer transition-colors">6. Thần kinh & Não</li>
+                      <li onClick={() => navigate('/products?category=8')} className="hover:text-brand cursor-pointer transition-colors">8. Đường huyết & Tiểu đường</li>
+                      <li onClick={() => navigate('/products?category=9')} className="hover:text-brand cursor-pointer transition-colors">9. Tim mạch & Huyết áp</li>
+                      <li onClick={() => navigate('/products?category=10')} className="hover:text-brand cursor-pointer transition-colors">10. Hô hấp & Tai mũi họng</li>
+                      <li onClick={() => navigate('/products?category=12')} className="hover:text-brand cursor-pointer transition-colors">12. Gan mật</li>
+                      <li onClick={() => navigate('/products?category=13')} className="hover:text-brand cursor-pointer transition-colors">13. Thận & Tiết niệu</li>
                     </ul>
                   </div>
 
+                  {/* CỘT 3: DỊCH VỤ Y TẾ & TƯ VẤN (TÔ MÀU XANH NỔI BẬT) */}
                   <div className="flex-1">
-                    <h4 className="font-bold text-brand mb-4 pb-2 border-b border-orange-50 uppercase text-xs tracking-widest">Mẹ & Bé</h4>
-                    <ul className="space-y-3 text-sm text-slate-600">
-                      {/* Tất cả Mẹ & Bé tạm gắn ID = 1 */}
-                      <li onClick={() => navigate('/products?category=1')} className="hover:text-brand cursor-pointer transition-colors">DHA cho bé</li>
-                      <li onClick={() => navigate('/products?category=1')} className="hover:text-brand cursor-pointer transition-colors">Canxi cho bé</li>
-                      <li onClick={() => navigate('/products?category=1')} className="hover:text-brand cursor-pointer transition-colors">Vitamin tổng hợp</li>
+                    <h4 className="font-bold text-emerald-600 mb-4 pb-2 border-b border-emerald-50 uppercase text-xs tracking-widest">Dịch Vụ Y Tế SaHa</h4>
+                    <ul className="space-y-4 text-sm text-slate-700">
+                      
+                      {/* SỬA LINK 1: HỒ SƠ Y TẾ */}
+                      <li onClick={() => navigate('/ho-so-y-te')} className="hover:text-emerald-600 cursor-pointer transition-colors font-bold flex items-center gap-3 group">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="M9 15h6"></path></svg>
+                        </div>
+                        Hồ sơ y tế cá nhân
+                      </li>
+                      
+                      {/* SỬA LINK 2 + ICON TAI NGHE: TRỢ LÝ DƯỢC SĨ */}
+                      <li onClick={() => navigate('/tu-van')} className="hover:text-emerald-600 cursor-pointer transition-colors font-bold flex items-center gap-3 group">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"></path>
+                            <path d="M21 16v2a4 4 0 0 1-4 4h-5"></path>
+                          </svg>
+                        </div>
+                        Trợ lý dược sĩ
+                      </li>
+
+                     {/* ĐÃ THU NHỎ: MUA THUỐC THEO ĐƠN AI (GIỐNG HỆT CÁC LINK CŨ) */}
+                      <li 
+                        onClick={() => navigate('/scan')} 
+                        className="hover:text-brand cursor-pointer transition-colors font-bold flex items-center gap-3 group"
+                      >
+                      <div className="w-8 h-8 rounded-full bg-orange-50 text-brand flex items-center justify-center group-hover:bg-brand group-hover:text-white transition-colors">
+                        <ScanLine size={16} />
+                      </div>
+                              Mua thuốc theo đơn AI
+                    </li>
                     </ul>
+
+                    <div className="mt-5 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                      <p className="text-[11px] text-emerald-700 leading-relaxed font-semibold italic">
+                        "SaHa lưu trữ bảo mật hồ sơ sức khỏe và đồng hành tư vấn trọn đời cho bạn và gia đình."
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex-1 bg-slate-50 p-4 rounded-2xl">
+                  {/* CỘT 4: SẢN PHẨM MỚI */}
+                  <div className="flex-1 bg-slate-50 p-5 rounded-3xl border border-slate-100">
                     <h4 className="font-bold text-slate-800 mb-4 uppercase text-xs tracking-widest">Sản phẩm mới</h4>
                     <div className="space-y-4">
-                      <div onClick={() => navigate('/products?category=1')} className="flex gap-3 items-center cursor-pointer group">
-                        <div className="w-12 h-12 bg-white rounded-lg shrink-0 overflow-hidden border border-slate-200 group-hover:border-brand/30 transition-colors">
+                      <div onClick={() => navigate('/products?category=1')} className="flex gap-3 items-center cursor-pointer group bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                        <div className="w-14 h-14 bg-white rounded-xl shrink-0 overflow-hidden border border-slate-100 group-hover:border-brand/30 transition-colors">
                           <img src="https://placehold.co/100x100/ea580c/white?text=DHC" className="w-full h-full object-cover" alt="DHC" />
                         </div>
                         <p className="text-[11px] font-bold leading-snug line-clamp-2 group-hover:text-brand transition-colors">Viên uống DHC Multi Vitamins gói 90 ngày</p>
                       </div>
-                      <div onClick={() => navigate('/products?category=9')} className="flex gap-3 items-center cursor-pointer group">
-                        <div className="w-12 h-12 bg-white rounded-lg shrink-0 overflow-hidden border border-slate-200 group-hover:border-brand/30 transition-colors">
+                      <div onClick={() => navigate('/products?category=9')} className="flex gap-3 items-center cursor-pointer group bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                        <div className="w-14 h-14 bg-white rounded-xl shrink-0 overflow-hidden border border-slate-100 group-hover:border-brand/30 transition-colors">
                           <img src="https://placehold.co/100x100/ea580c/white?text=Omega" className="w-full h-full object-cover" alt="Omega" />
                         </div>
-                        <p className="text-[11px] font-bold leading-snug line-clamp-2 group-hover:text-brand transition-colors">Omega 3-6-9 Dầu cá hồi Na-uy</p>
+                        <p className="text-[11px] font-bold leading-snug line-clamp-2 group-hover:text-brand transition-colors">Omega 3-6-9 Dầu cá hồi Na-uy bảo vệ tim mạch</p>
                       </div>
                     </div>
                   </div>
+
                 </div>
               )}
             </div>
@@ -265,9 +323,55 @@ const App = () => {
       <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand group-hover:w-full transition-all duration-300"></div>
     </div>
   ))}
+  {/* 2. THÊM MENU DỊCH VỤ Y TẾ SAHA VÀO ĐÂY (Đã chỉnh lại CSS đồng đều 100%) */}
+  <div className="group relative py-3 cursor-pointer">
+    
+    {/* CHỈNH LẠI CHỖ NÀY: Dùng font-bold và text-slate-600 cho giống hệt anh em nó */}
+    <span className="text-sm font-bold text-slate-600 group-hover:text-emerald-600 transition-colors flex items-center gap-1">
+      Dịch vụ y tế SaHa <ChevronRight size={14} className="rotate-90 opacity-40 group-hover:rotate-180 transition-transform duration-300" />
+    </span>
+    
+    <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 group-hover:w-full transition-all duration-300"></div>
+
+    {/* Bảng Dropdown xổ xuống (Giữ nguyên không đổi) */}
+    <div className="absolute top-full right-0 w-64 bg-white shadow-2xl rounded-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden">
+      <ul className="py-2">
+        <li onClick={() => navigate('/ho-so-y-te')} className="px-5 py-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 text-sm font-bold flex items-center gap-3 transition-colors">
+          <div className="text-emerald-500">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="M9 15h6"></path></svg>
+          </div>
+          Hồ sơ y tế cá nhân
+        </li>
+        
+        <li onClick={() => navigate('/tu-van')} className="px-5 py-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-600 text-sm font-bold flex items-center gap-3 transition-colors">
+          <div className="text-emerald-500">
+            {/* Đã thay icon Điện thoại thành icon Tai nghe (Trợ lý) cực xịn */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"></path>
+              <path d="M21 16v2a4 4 0 0 1-4 4h-5"></path>
+            </svg>
+          </div>
+          Trợ lý dược sĩ
+        </li>
+        <div className="h-px bg-slate-100 my-1 mx-4"></div>
+        <li 
+            onClick={() => navigate('/scan')} 
+            className="px-5 py-3 hover:bg-orange-50 text-slate-700 hover:text-brand text-sm font-bold flex items-center gap-3 transition-colors group/scan"
+        >
+          <div className="text-brand group-hover/scan:animate-pulse">
+       {/* Icon máy quét nhỏ gọn đúng chuẩn */}
+      <ScanLine size={18} />
+      </div>
+            Mua thuốc theo đơn AI
+      </li>
+      </ul>
+    </div>
+  </div>
 </nav>
           </div>
         </div>
+        {/* MODAL MẮT THẦN ĐẶT Ở ĐÂY */}
+        <SnapMatchModal isOpen={isSnapModalOpen} onClose={() => setIsSnapModalOpen(false)} />
       </header>
 
       {/* 3. HERO BANNER */}
@@ -296,7 +400,7 @@ const App = () => {
           <HeartPulse size={300} className="absolute -right-20 -bottom-20 text-orange-200 opacity-30" />
         </div>
       </div>
-
+      
       {/* DANH MỤC TRUNG TÂM (Đã thay đổi Icon và Gắn Link chuyển trang) */}
       <div className="max-w-7xl mx-auto px-4 mt-12">
         <h3 className="text-2xl font-black text-slate-900 mb-6">Danh Mục Chăm Sóc</h3>
@@ -329,7 +433,7 @@ const App = () => {
           })}
         </div>
       </div>
-
+          
       {/* 5. SẢN PHẨM KHUYÊN DÙNG */}
       <div className="max-w-7xl mx-auto px-4 mt-16">
         <div className="flex justify-between items-end mb-6">
@@ -374,7 +478,7 @@ const App = () => {
           )}
         </div>
       </div>
-
+      
       {/* 6. GÓC SỨC KHỎE SAHA */}
       <div className="max-w-7xl mx-auto px-4 mt-16 mb-16">
         <h3 className="text-2xl font-black text-slate-900 mb-6">Góc Sức Khỏe SaHa</h3>
@@ -402,9 +506,7 @@ const App = () => {
 
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                    <Clock size={16} />
                     {new Date(blog.createdAt).toLocaleDateString('vi-VN')}
                   </div>
                   
@@ -487,6 +589,7 @@ const App = () => {
         <button className="bg-green-500 text-white p-3.5 rounded-full shadow-lg hover:scale-110 hover:bg-green-600 transition-all">
           <Phone size={24} />
         </button>
+              <FloatingPrescription />
         <button className="bg-brand text-white p-4 rounded-full shadow-xl shadow-brand/30 hover:scale-110 hover:bg-brand-hover transition-all flex items-center gap-3 group">
           <Sparkles size={26} className="animate-pulse" />
           <span className="font-bold hidden group-hover:block whitespace-nowrap overflow-hidden origin-right transition-all">Hỏi AI SaHa</span>

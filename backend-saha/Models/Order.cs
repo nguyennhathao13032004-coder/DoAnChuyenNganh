@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using System.Collections.Generic;
 namespace backend_saha.Models
 {
     [Table("orders")]
@@ -25,5 +25,7 @@ namespace backend_saha.Models
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+        public virtual ICollection<OrderItem> OrderItems { get; set; }
+        
     }
 }

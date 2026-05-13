@@ -104,7 +104,7 @@ const ChatAI = () => {
     }
   }, [messages, isOpen, isMinimized]);
 
-  const handleSend = async () => {
+const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;
 
@@ -114,6 +114,7 @@ const ChatAI = () => {
     setLoading(true);
 
     try {
+      // 1. Gọi Bot (Cổng 8000) lấy câu trả lời
       const res = await fetch('http://127.0.0.1:8000/api/chat', {
         method: 'POST',
         headers: {
@@ -136,6 +137,40 @@ const ChatAI = () => {
         products: data.products || null,
       };
       setMessages((prev) => [...prev, botMsg]);
+
+      // ==========================================
+      // 🔥 GỬI LỊCH SỬ SANG C# (Cổng 5246) KÈM TÊN USER
+      // ==========================================
+      try {
+        let userInfo = 'Khách Vãng Lai';
+        
+        // Bóc tách dữ liệu từ Local Storage
+        const userString = localStorage.getItem('user'); // ⚠️ Đổi chữ 'user' nếu key của bạn tên khác nhé
+        if (userString) {
+            const userData = JSON.parse(userString);
+            if (userData.fullName && userData.email) {
+                // Ghép tên và email lại cho đẹp: Tiền Phước Sang (sangtien@gmail.com)
+                userInfo = `${userData.fullName} (${userData.email})`;
+            } else if (userData.email) {
+                userInfo = userData.email;
+            }
+        }
+        
+        await fetch('http://localhost:5246/api/Admin/save-chat-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: userInfo,        // Tên tài khoản siêu ngầu vừa ghép xong
+            userMessage: text,          // Câu hỏi của khách
+            aiResponse: data.answer     // Câu trả lời của AI
+          }),
+        });
+        console.log("Đã lưu lịch sử chat vào Admin với tài khoản:", userInfo);
+      } catch (saveErr) {
+        console.error("Lỗi khi lưu lịch sử chat:", saveErr);
+      }
+      // ==========================================
+
     } catch (err) {
       const errorMsg = {
         id: Date.now() + 1,

@@ -26,5 +26,7 @@ namespace backend_saha.Models
 
         // MỐI QUAN HỆ ĐẾN BẢNG ORDER
         public Order Order { get; set; } 
+        public virtual Product Product { get; set; }
+
     }
 }

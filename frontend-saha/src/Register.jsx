@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HeartPulse, Mail, Lock, User, Phone, ArrowLeft, Loader2, ShieldPlus } from 'lucide-react';
+import { HeartPulse, Mail, Lock, User, Phone, ChevronRight, Loader2, ShieldPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -58,13 +58,19 @@ const Register = () => {
       <div className="absolute top-[-5%] left-[-5%] w-[420px] h-[420px] rounded-full bg-orange-100/40 blur-3xl"></div>
       <div className="absolute bottom-[-5%] right-[-5%] w-[350px] h-[350px] rounded-full bg-orange-50/60 blur-3xl"></div>
 
-      {/* Nút quay lại */}
-      <button 
-        onClick={() => navigate('/')}
-        className="absolute top-8 left-8 flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-all text-sm font-semibold border-none bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm cursor-pointer z-10"
-      >
-        <ArrowLeft size={16} /> Trang chủ
-      </button>
+      {/* THANH MENU ĐIỀU HƯỚNG (BREADCRUMB) */}
+      <div className="absolute top-8 left-8 md:left-12 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400 z-10">
+        <span 
+          onClick={() => navigate('/')} 
+          className="hover:text-orange-600 cursor-pointer transition-colors"
+        >
+          Trang chủ
+        </span>
+        <ChevronRight size={14} className="opacity-50" />
+        <span className="text-slate-800">
+          Đăng ký tài khoản
+        </span>
+      </div>
 
       <div className="w-full max-w-[440px] z-10 my-8">
         
@@ -168,7 +174,7 @@ const Register = () => {
             {/* Nút bấm */}
             <button 
               disabled={loading}
-              className="w-full bg-brand text-white py-4 rounded-xl font-bold text-base shadow-xl shadow-brand/20 hover:brightness-105 transition-all active:scale-[0.98] mt-5 flex justify-center items-center gap-2"
+              className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-base shadow-xl shadow-orange-600/20 hover:brightness-105 transition-all active:scale-[0.98] mt-5 flex justify-center items-center gap-2"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : "TẠO TÀI KHOẢN NGAY"}
             </button>
@@ -181,7 +187,7 @@ const Register = () => {
             Đã có tài khoản SaHa? 
             <span 
               onClick={() => navigate('/login')} 
-              className="font-bold ml-1.5 cursor-pointer hover:underline text-brand"
+              className="font-bold ml-1.5 cursor-pointer hover:underline text-orange-600"
             >
               Đăng nhập ngay
             </span>

@@ -12,8 +12,13 @@ namespace backend_saha.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<Order> Orders { get; set; }
-public DbSet<OrderItem> OrderItems { get; set; }
-
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<HealthRecord> HealthRecords { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<ProductReview> ProductReviews { get; set; }
+        public DbSet<Prescription> Prescriptions { get; set; }
+        public virtual DbSet<DrugInteraction> DrugInteractions { get; set; }
+        public DbSet<AiChatLog> AiChatLogs { get; set; }
         // THÊM ĐOẠN NÀY VÀO ĐỂ ÉP C# DÙNG CHỮ THƯỜNG TRÊN SUPABASE
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

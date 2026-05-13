@@ -23,11 +23,18 @@ namespace backend_saha.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBlogs()
         {
-            var blogs = await _context.Blogs
-                                .OrderByDescending(b => b.CreatedAt)
-                                .Take(10)
-                                .ToListAsync();
-            return Ok(blogs);
+            try
+            {
+                var blogs = await _context.Blogs
+                                    .OrderByDescending(b => b.CreatedAt)
+                                    .Take(10)
+                                    .ToListAsync();
+                return Ok(blogs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi lấy blog: " + ex.Message });
+            }
         }
 
         // 2. API thêm bài viết mới (Dành cho Node.js Crawler bắn vào)
@@ -68,6 +75,56 @@ namespace backend_saha.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        // =======================================================
+        // 4. API CẬP NHẬT BÀI VIẾT (DÀNH CHO ADMIN)
+        // =======================================================
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBlog(int id, [FromBody] Blog updatedBlog)
+        {
+            try
+            {
+                var blog = await _context.Blogs.FindAsync(id);
+                if (blog == null)
+                    return NotFound(new { message = "Không tìm thấy bài viết" });
+
+                blog.Title = updatedBlog.Title ?? blog.Title;
+                blog.Content = updatedBlog.Content ?? blog.Content;
+                blog.ImageUrl = updatedBlog.ImageUrl ?? blog.ImageUrl;
+
+                _context.Blogs.Update(blog);
+                await _context.SaveChangesAsync();
+                
+                return Ok(new { message = "Cập nhật bài viết thành công!", data = blog });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật: " + ex.Message });
+            }
+        }
+
+        // =======================================================
+        // 5. API XÓA BÀI VIẾT (DÀNH CHO ADMIN)
+        // =======================================================
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBlog(int id)
+        {
+            try
+            {
+                var blog = await _context.Blogs.FindAsync(id);
+                if (blog == null)
+                    return NotFound(new { message = "Không tìm thấy bài viết" });
+
+                _context.Blogs.Remove(blog);
+                await _context.SaveChangesAsync();
+                
+                return Ok(new { message = "Xóa bài viết thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi xóa: " + ex.Message });
             }
         }
     }

@@ -24,7 +24,6 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache(); // Bật tính năng lưu trữ tạm thời cho OTP
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
 // 3. ÉP BUỘC BẬT SWAGGER (Để lát mình test API trực tiếp luôn)

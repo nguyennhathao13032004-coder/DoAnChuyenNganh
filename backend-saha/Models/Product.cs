@@ -51,5 +51,7 @@ namespace backend_saha.Models
         public string? Specs { get; set; }
         [Column("brand")]
         public string? Brand { get; set; }
+        // Trong file Models/Product.cs
+        public string Category { get; set; } = "";
     }
 }

@@ -15,6 +15,7 @@ import {
   Package
 } from 'lucide-react';
 import { useCart } from './CartContext';
+import AiInteractionChecker from './AiInteractionChecker';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -46,7 +47,6 @@ const Cart = () => {
           </div>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-4 py-10">
         <button
           onClick={() => navigate('/products')}
@@ -55,7 +55,7 @@ const Cart = () => {
           <ArrowLeft size={18} />
           Tiếp tục mua sắm
         </button>
-
+        <AiInteractionChecker />
         {cart.length === 0 ? (
           <div className="bg-white rounded-[40px] p-16 text-center shadow-xl border border-slate-100">
             <div className="w-28 h-28 mx-auto rounded-full bg-orange-50 flex items-center justify-center mb-6">

@@ -14,11 +14,9 @@ namespace backend_saha.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        // 1. Chỉ khai báo ĐÚNG 1 LẦN ở đây
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _cache;
 
-        // 2. Chỉ có 1 hàm khởi tạo duy nhất
         public AuthController(ApplicationDbContext context, IMemoryCache cache)
         {
             _context = context;
@@ -96,13 +94,16 @@ namespace backend_saha.Controllers
 
                 var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.UserId == user.Id);
 
+                // ĐÃ CHỈNH SỬA: Thêm Token "giả" để React không báo undefined và Bổ sung RoleId vào cục User
                 return Ok(new { 
                     message = "Đăng nhập thành công!", 
+                    token = "saha_fake_token_for_now", // Giả lập token tạm thời để Frontend hoạt động
                     user = new { 
-                        user.Id, 
-                        user.Username, 
-                        user.Email, 
-                        FullName = profile?.FullName 
+                        id = user.Id, 
+                        username = user.Username, 
+                        email = user.Email, 
+                        fullName = profile?.FullName,
+                        roleId = user.RoleId // CHÌA KHÓA VÀO ADMIN LÀ ĐÂY!
                     } 
                 });
             }
@@ -129,10 +130,7 @@ namespace backend_saha.Controllers
         {
             var email = new MimeMessage();
             
-            // 🔴 BƯỚC 1: ĐIỀN GMAIL CỦA HÀO VÀO CHỖ NÀY
             string myGmail = "nguyennhathao13032004@gmail.com"; 
-            
-            // 🔴 BƯỚC 2: ĐIỀN MẬT KHẨU ỨNG DỤNG 16 CHỮ VÀO CHỖ NÀY (Viết liền, không có dấu cách)
             string myAppPassword = "oulakndwlpsmlxvl";
 
             email.From.Add(new MailboxAddress("Nhà thuốc SaHa", myGmail));
@@ -169,10 +167,7 @@ namespace backend_saha.Controllers
                 return BadRequest(new { message = "Không tìm thấy tài khoản với email này." });
             }
 
-            // Tạo mã OTP ngẫu nhiên 6 chữ số
             string otp = new Random().Next(100000, 999999).ToString();
-
-            // Lưu OTP vào RAM máy chủ (hết hạn sau 5 phút)
             _cache.Set(request.Email, otp, TimeSpan.FromMinutes(5));
 
             try
@@ -192,7 +187,6 @@ namespace backend_saha.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            // Kiểm tra mã OTP trong RAM
             if (!_cache.TryGetValue(request.Email, out string? savedOtp) || savedOtp != request.Otp)
             {
                 return BadRequest(new { message = "Mã xác nhận không đúng hoặc đã hết hạn (quá 5 phút)." });
@@ -201,21 +195,15 @@ namespace backend_saha.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null) return BadRequest(new { message = "Lỗi xác thực." });
 
-            // BĂM MẬT KHẨU MỚI TRƯỚC KHI LƯU 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword); 
             await _context.SaveChangesAsync();
 
-            // Xóa mã OTP sau khi đổi pass thành công
             _cache.Remove(request.Email);
 
             return Ok(new { message = "Khôi phục mật khẩu thành công!" });
         }
     }
 
-    // =======================================================
-    // CÁC CLASS DỮ LIỆU (NẰM NGOÀI CONTROLLER)
-    // Đã thêm = string.Empty; để hết báo lỗi gạch dưới
-    // =======================================================
     public class ForgotPasswordRequest
     {
         public string Email { get; set; } = string.Empty;
@@ -227,5 +215,4 @@ namespace backend_saha.Controllers
         public string Otp { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
     }
-    
 }

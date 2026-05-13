@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ProductReviewSection from './ProductReviewSection';
+import ProductTraceability from './ProductTraceability';
 import { 
   ShoppingCart, ArrowLeft, Star, ShieldCheck, 
   HeartPulse, Search, ChevronRight 
@@ -253,6 +255,7 @@ const ProductDetail = () => {
                   THÊM VÀO GIỎ HÀNG
                 </button>
               </div>
+              <ProductTraceability productId={product.id} />
             </div>
           </div>
         </div>
@@ -305,6 +308,14 @@ const ProductDetail = () => {
             )}
           </div>
         </div>
+
+        {/* =============== KHU VỰC REVIEW VỪA BỔ SUNG =============== */}
+        <div className="mt-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 md:p-12">
+          {/* TRUYỀN ID SẢN PHẨM VÀO ĐÂY ĐỂ COMPONENT LOAD ĐÚNG REVIEW */}
+          <ProductReviewSection productId={id} />
+        </div>
+        {/* ========================================================== */}
+
       </div>
 
       {/* THANH MUA HÀNG TRÊN MOBILE */}

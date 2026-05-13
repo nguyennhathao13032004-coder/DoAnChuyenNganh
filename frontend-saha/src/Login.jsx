@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { HeartPulse, Mail, Lock, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { HeartPulse, Mail, Lock, Loader2, ShieldCheck, Home, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useGoogleLogin } from '@react-oauth/google'; // Import thư viện Google
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,13 +18,23 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await axios.post('http://localhost:5246/api/Auth/login', { email, password });
+      
+      const user = res.data.user;
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); 
+      localStorage.setItem('user', JSON.stringify(user)); 
+
       alert("Đăng nhập thành công!");
       
-      // Chuyển trang và TẢI LẠI TRANG ĐỂ ĐỒNG BỘ GIỎ HÀNG
-      navigate('/');
-      window.location.reload(); 
+      // ĐÃ SỬA: Ép kiểu về số (Number) để so sánh chuẩn xác tuyệt đối
+      const userRole = Number(user.roleId || user.role_id || user.RoleId);
+
+      // ĐÃ SỬA: Dùng href thay cho navigate + reload để không bị kẹt trang
+      if (userRole === 1) {
+        window.location.href = '/admin'; 
+      } else {
+        window.location.href = '/'; 
+      }
+      
     } catch (err) {
       alert("Lỗi: " + (err.response?.data?.message || "Sai tài khoản hoặc mật khẩu"));
     } finally {
@@ -37,27 +47,31 @@ const Login = () => {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        // Lấy thông tin user (Email, Tên, Ảnh) trực tiếp từ Google
         const userInfo = await axios.get(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
         );
 
-        // Gửi thông tin sang Backend C# (Hào nhớ tạo API này ở C# nhé)
         const res = await axios.post('http://localhost:5246/api/Auth/google-login', {
           email: userInfo.data.email,
           fullName: userInfo.data.name,
           googleId: userInfo.data.sub
         });
 
-        // Nhận Token từ C# và cho phép vào trang chủ
+        const user = res.data.user;
         localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user)); 
+        localStorage.setItem('user', JSON.stringify(user)); 
+        
         alert("Đăng nhập Google thành công!");
         
-        // Chuyển trang và TẢI LẠI TRANG ĐỂ ĐỒNG BỘ GIỎ HÀNG
-        navigate('/');
-        window.location.reload();
+        // ĐÃ SỬA: Đồng bộ logic chuyển trang y hệt như bên đăng nhập thường
+        const userRole = Number(user.roleId || user.role_id || user.RoleId);
+
+        if (userRole === 1) {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/';
+        }
 
       } catch (err) {
         console.error("Lỗi Google Login:", err);
@@ -76,9 +90,17 @@ const Login = () => {
       <div className="absolute top-[-8%] right-[-8%] w-[380px] h-[380px] rounded-full bg-orange-100/40 blur-3xl"></div>
       <div className="absolute bottom-[-8%] left-[-8%] w-[280px] h-[280px] rounded-full bg-orange-50/60 blur-3xl"></div>
 
-      <button onClick={() => navigate('/')} className="absolute top-8 left-8 flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-all text-sm font-semibold border-none bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm cursor-pointer z-10">
-        <ArrowLeft size={16} /> Trang chủ
-      </button>
+      <div className="absolute top-8 left-8 z-10 flex items-center gap-2 text-sm font-semibold bg-white/70 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-sm border border-slate-100/50">
+        <div
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 cursor-pointer text-slate-500 hover:text-orange-500 transition"
+        >
+          <Home size={16} />
+          Trang chủ
+        </div>
+        <ChevronRight size={14} className="text-slate-300" />
+        <span className="text-orange-500 uppercase tracking-wide text-xs">Đăng nhập</span>
+      </div>
 
       <div className="w-full max-w-[400px] z-10">
         <div className="text-center mb-10">
@@ -108,9 +130,9 @@ const Login = () => {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[12px] font-bold text-slate-500 uppercase tracking-widest">Mật khẩu</label>
-            <span 
-                onClick={() => navigate('/forgot-password')} 
-                className="text-[11px] font-bold text-orange-400 hover:underline cursor-pointer">Quên mật khẩu?</span>
+                <span 
+                    onClick={() => navigate('/forgot-password')} 
+                    className="text-[11px] font-bold text-orange-400 hover:underline cursor-pointer">Quên mật khẩu?</span>
               </div>
               <div className="relative group">
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-orange-200 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-sm font-medium" />
@@ -118,12 +140,11 @@ const Login = () => {
               </div>
             </div>
 
-            <button disabled={loading} className="w-full bg-brand text-white py-4 rounded-xl font-bold text-base shadow-xl shadow-brand/20 hover:brightness-105 transition-all active:scale-[0.98] mt-3 flex justify-center items-center gap-2">
+            <button disabled={loading} className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-base shadow-xl shadow-orange-600/20 hover:brightness-105 transition-all active:scale-[0.98] mt-3 flex justify-center items-center gap-2">
               {loading ? <Loader2 className="animate-spin" size={20} /> : "ĐĂNG NHẬP"}
             </button>
           </form>
 
-          {/* Gạch ngang */}
           <div className="mt-7 relative">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
             <div className="relative flex justify-center text-[10px]">
@@ -131,7 +152,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* NÚT GOOGLE BẤM VÀO SẼ KÍCH HOẠT Hàm loginWithGoogle */}
           <button 
             onClick={() => loginWithGoogle()}
             type="button"
@@ -152,7 +172,7 @@ const Login = () => {
         <div className="text-center mt-9">
             <p className="text-slate-500 font-medium">
                 Bạn mới biết đến SaHa? 
-                <span onClick={() => navigate('/register')} className="font-bold ml-1.5 cursor-pointer hover:underline text-brand">
+                <span onClick={() => navigate('/register')} className="font-bold ml-1.5 cursor-pointer hover:underline text-orange-600">
                     Tạo tài khoản
                 </span>
             </p>
