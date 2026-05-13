@@ -1,0 +1,46 @@
+services:
+  # 1. API C# (Backend chính)
+  - type: web
+    name: saha-api
+    env: docker
+    rootDir: backend-saha
+    plan: free
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      # Thêm biến DefaultConnection nếu C# của sếp dùng Entity Framework
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+
+  # 2. API Python (AI Tư Vấn)
+  - type: web
+    name: saha-ai
+    env: python
+    rootDir: saha-backend-ai
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: GEMINI_API_KEY_0
+        sync: false
+      - key: GEMINI_API_KEY_1
+        sync: false
+      - key: GEMINI_API_KEY_2
+        sync: false
+      - key: GEMINI_API_KEY_3
+        sync: false
+
+  # 3. Giao diện React (Mặt tiền)
+  - type: web
+    name: saha-pharmacy
+    env: static
+    rootDir: frontend-saha
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "./dist"
+    envVars:
+      - key: VITE_API_URL
+        value: "https://saha-api.onrender.com/api" 
+      - key: VITE_AI_URL
+        value: "https://saha-ai.onrender.com"
